@@ -8,13 +8,12 @@ authors = ["stalkcomrade <stanislavpoznyakof@gmail.com>"]
 python = "3.8.2"
 tobii-research = "^1.9.0"
 opencv-python = "^4.5.3"
-PyAudio = "^0.2.11"
+PyAudio = {version = "^0.2.11", markers = "sys_platform == 'darwin'" }
 Wave = "^0.0.2"
 mss = "^6.1.0"
 python-lsp-server = {extras = ["all"], version = "^1.2.3"}
 Pillow = "^8.3.2"
 imutils = "^0.5.4"
-PyAutoGUI = "^0.9.53"
 
 [tool.poetry.dev-dependencies]
 

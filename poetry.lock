@@ -2069,7 +2069,7 @@ test = ["pylint", "pycodestyle", "pyflakes", "pytest", "pytest-cov", "coverage"]
 
 [[package]]
 name = "python-lsp-server"
-version = "1.2.3"
+version = "1.2.4"
 description = "Python Language Server for the Language Server Protocol"
 category = "main"
 optional = false
@@ -2077,7 +2077,7 @@ python-versions = ">=3.6"
 
 [package.dependencies]
 autopep8 = {version = "*", optional = true, markers = "extra == \"all\""}
-flake8 = {version = ">=3.8.0", optional = true, markers = "extra == \"all\""}
+flake8 = {version = ">=3.8.0,<4.0.0", optional = true, markers = "extra == \"all\""}
 jedi = ">=0.17.2,<0.19.0"
 mccabe = {version = ">=0.6.0,<0.7.0", optional = true, markers = "extra == \"all\""}
 pluggy = "*"
@@ -2091,9 +2091,9 @@ ujson = ">=3.0.0"
 yapf = {version = "*", optional = true, markers = "extra == \"all\""}
 
 [package.extras]
-all = ["autopep8", "flake8 (>=3.8.0)", "mccabe (>=0.6.0,<0.7.0)", "pycodestyle (>=2.7.0)", "pydocstyle (>=2.0.0)", "pyflakes (>=2.3.0,<2.4.0)", "pylint (>=2.5.0,<2.10.0)", "rope (>=0.10.5)", "yapf"]
+all = ["autopep8", "flake8 (>=3.8.0,<4.0.0)", "mccabe (>=0.6.0,<0.7.0)", "pycodestyle (>=2.7.0)", "pydocstyle (>=2.0.0)", "pyflakes (>=2.3.0,<2.4.0)", "pylint (>=2.5.0,<2.10.0)", "rope (>=0.10.5)", "yapf"]
 autopep8 = ["autopep8"]
-flake8 = ["flake8 (>=3.8.0)"]
+flake8 = ["flake8 (>=3.8.0,<4.0.0)"]
 mccabe = ["mccabe (>=0.6.0,<0.7.0)"]
 pycodestyle = ["pycodestyle (>=2.7.0)"]
 pydocstyle = ["pydocstyle (>=2.0.0)"]
@@ -3097,8 +3097,8 @@ python-lsp-jsonrpc = [
     {file = "python_lsp_jsonrpc-1.0.0-py3-none-any.whl", hash = "sha256:079b143be64b0a378bdb21dff5e28a8c1393fe7e8a654ef068322d754e545fc7"},
 ]
 python-lsp-server = [
-    {file = "python-lsp-server-1.2.3.tar.gz", hash = "sha256:07ec8b9427c4265a7458f46f4a913beb970441518f5ced6886f71dae6725f72e"},
-    {file = "python_lsp_server-1.2.3-py3-none-any.whl", hash = "sha256:f9ff399265eff4d88d87550996e52681b46e2728949804db78d2ee79be3aa46c"},
+    {file = "python-lsp-server-1.2.4.tar.gz", hash = "sha256:007278c4419339bd3a61ca6d7eb8648ead28b5f1b9eba3b6bae8540046116335"},
+    {file = "python_lsp_server-1.2.4-py3-none-any.whl", hash = "sha256:a163907c83ba7bae6b45a9bc9e407b7001fbed7c7561d032a5fd355ae6fae42c"},
 ]
 python3-xlib = [
     {file = "python3-xlib-0.15.tar.gz", hash = "sha256:dc4245f3ae4aa5949c1d112ee4723901ade37a96721ba9645f2bfa56e5b383f8"},

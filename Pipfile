@@ -1,0 +1,20 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+tobii-research = "*"
+opencv-python = "*"
+wave = "*"
+mss = "*"
+tobii-research-addons = {git = "https://github.com/tobiipro/prosdk-addons-python.git"}
+pandas = "*"
+pywin32 = "*"
+
+[dev-packages]
+python-language-server = {extras = ["all"], version = "*"}
+pyinstaller = "*"
+
+[requires]
+python_version = "3.8.2"

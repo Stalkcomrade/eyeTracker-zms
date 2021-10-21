@@ -5,6 +5,8 @@ import threading
 import time
 import subprocess
 import os
+import platform
+import glob 
 
 import numpy as np
 from mss import mss
@@ -93,25 +95,15 @@ class VideoRecorder():
                         sct_img = self.sct.grab(mon)
                         # Convert the screenshot to a numpy array
                         # Convert it from BGR(Blue, Green, Red) to RGB(Red, Green, Blue)
-                        # fps_custom = 'fps: %.1f' % ( 1./( time.time() - timer_current ))
-                        # print(fps_custom)
-                        # previous_time = time.time()
-                        
                         frame = np.array(sct_img)
                         frame = cv2.resize(frame, (int(frame.shape[1]/scaling), int(frame.shape[0]/scaling)))
                         frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
-                        # cv2.imshow ('frame', frame)
-                        # video_out.write(frame)
+                        
                         self.video_out.write(frame)
                         self.frame_counts += 1
                         print("frame ", self.frame_counts)
                         timer_current = time.time() - timer_start
                         time.sleep(0.16)
-                        
-                        # gray = cv2.cvtColor(video_frame, cv2.COLOR_BGR2GRAY)
-                        # cv2.imshow('video_frame', gray)
-                        # cv2.waitKey(1)
-                        # 0.16 delay -> 6 fps
 
 
         # Finishes the video recording therefore the thread too
@@ -255,24 +247,27 @@ def stop_AVrecording(filename):
         while (video_thread.videoThreadActive & audio_thread.audioThreadActive):
                 time.sleep(1)
 
-
+        if platform.system() == "Windows":
+                ffmpeg_path = glob.glob("C:\\Users\\c-fitflora\\Downloads\\ffmpeg-4.4-essentials_build\\ffmpeg-4.4-essentials_build\\bin\\ffmpeg.exe")[0]
+        else:
+                ffmpeg_path = "ffmpeg"
 #        Merging audio and video signal
         print("Before ABS")
         if abs(recorded_fps - 6) >= 0.01:    # If the fps rate was higher/lower than expected, re-encode it to the expected
 
                 print("in ABS")
                 print("Re-encoding")
-                cmd = "ffmpeg -r " + str(recorded_fps) + " -i temp_video.avi -pix_fmt yuv420p -r 6 temp_video2.avi"
+                cmd = ffmpeg_path + " -r " + str(recorded_fps) + " -i temp_video.avi -pix_fmt yuv420p -r 6 temp_video2.avi"
                 subprocess.call(cmd, shell=True)
 
                 print("Muxing")
-                cmd = "ffmpeg -ac 1 -channel_layout mono -i temp_audio.wav -i temp_video2.avi -pix_fmt yuv420p " + filename + ".avi"
+                cmd = ffmpeg_path + " -ac 1 -channel_layout mono -i temp_audio.wav -i temp_video2.avi -pix_fmt yuv420p " + filename + ".avi"
                 subprocess.call(cmd, shell=True)
 
         else:
 
                 print("Normal recording\nMuxing")
-                cmd = "ffmpeg -ac 1 -channel_layout mono -i temp_audio.wav -i temp_video.avi -pix_fmt yuv420p " + filename + ".avi"
+                cmd = ffmpeg_path + " -ac 1 -channel_layout mono -i temp_audio.wav -i temp_video.avi -pix_fmt yuv420p " + filename + ".avi"
                 subprocess.call(cmd, shell=True)
 
                 print("..")
@@ -301,15 +296,9 @@ def file_manager(filename):
 
 
 if __name__== "__main__":
-# try:
-
         filename = "Default_user"
-        file_manager(filename)
+        # file_manager(filename)
         start_AVrecording(filename)     
-
-# except KeyboardInterrupt:
-
-        time.sleep(5)
-        print("kbd interrupt")
+        time.sleep(15)
         stop_AVrecording(filename)
         print("Done")

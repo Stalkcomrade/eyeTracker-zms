@@ -3,10 +3,10 @@ import cv2
 import glob
 # from moviepy.editor import VideoFileClip
 from mss import mss
-from PIL import Image
+# from PIL import Image
 import time
 # from imutils import resize
-import imutils
+# import imutils
 
 # img = cv2.imread(file , 0)
 # img = imutils.resize(img, width=1280)

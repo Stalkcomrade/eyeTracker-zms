@@ -1,2 +1,10 @@
 *.wav
 *.avi
+*.png
+*.csv
+*.html
+*.css
+__pycache__
+build
+dist
+ffmpeg-4.4-essentials_build
