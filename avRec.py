@@ -240,9 +240,13 @@ class VideoRecorder():
 
                             # resize image
                             resized = cv2.resize(screenshot, dim, interpolation = cv2.INTER_LINEAR_EXACT)
-                            self.out.write(cv2.cvtColor(resized, cv2.COLOR_BGR2RGB))
+                            # self.out.write(cv2.cvtColor(resized, cv2.COLOR_BGR2RGB))
+                            # cv2.COLOR_BGRA2RGB
+                            self.out.write(cv2.cvtColor(resized, cv2.COLOR_BGRA2BGR))
+                            # cv2.color_BGR
+                            # self.out.write(resized)
                         else:
-                            self.out.write(cv2.cvtColor(screenshot, cv2.COLOR_BGR2RGB))
+                            self.out.write(cv2.cvtColor(screenshot, cv2.COLOR_BGRA2BGR))
 
         # Finishes the video recording therefore the thread too
         def stop(self):
@@ -384,12 +388,6 @@ def stop_AVrecording(filename):
         call_and_log_subprocess(ffmpeg_path, cmd2_args)
         call_and_log_subprocess(ffmpeg_path, cmd3_args)
 
-        # process = Popen(executable=ffmpeg_path, args=cmd1_args, stdout=PIPE, stderr=STDOUT)
-        # with process.stdout:
-        #     log_subprocess_output(process.stdout)
-        # exitcode = process.wait() # 0 means success
-        # print("Exit code from cmd1: ", exitcode)
-
         # subprocess.call(cmd1, shell=True)
         # print("\n\ncmd1 is finished\n\n")
         # subprocess.call(cmd2, shell=True)
@@ -423,7 +421,7 @@ def on_exit(signal_type):
 
 win32api.SetConsoleCtrlHandler(on_exit, True)
 
-# TODO: fix color issues
+# SOLVED: fix color issues (BRGA to BRG)
 
 if __name__== "__main__":
 
