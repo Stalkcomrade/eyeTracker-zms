@@ -1,3 +1,4 @@
+import math
 import cv2
 import pyaudio
 import wave
@@ -11,6 +12,9 @@ import numpy as np
 import logging
 import sys
 import cv2
+import statistics
+
+import atexit
 
 from mss.screenshot import ScreenShot
 
@@ -21,9 +25,51 @@ else:
 
 from collections import namedtuple
 
+import logging
+import sys
+import re
+import traceback
+
+from subprocess import Popen, PIPE, STDOUT
+
+log = logging.getLogger('stdxxx')
+
+class StreamLogger(object):
+
+    def __init__(self, stream, prefix=''):
+        self.stream = stream
+        self.prefix = prefix
+        self.data = ''
+
+    def flush(self):
+        pass
+
+    def write(self, data):
+        self.stream.write(data)
+        self.stream.flush()
+
+        if (re.search("FPS\: ", data) is None):
+            self.data += data
+        # filter 
+        re.search("FPS\: ", data)
+        tmp = str(self.data)
+        if '\x0a' in tmp or '\x0d' in tmp:
+            tmp = tmp.rstrip('\x0a\x0d')
+            log.info('%s%s' % (self.prefix, tmp))
+            self.data = ''
+
+
+logging.basicConfig(level=logging.DEBUG,
+                    filename='text.log',
+                    filemode='a')
+
+sys.stdout = StreamLogger(sys.stdout, '[stdout] ')
+sys.stderr = StreamLogger(sys.stderr, '[stderr] ')
+
 
 wrk_path = os.getcwd()
-
+global real_fps
+real_fps = list()
 
 class ScreenCapture:
     """
@@ -160,15 +206,21 @@ class VideoRecorder():
         def __init__(self, filename):
             self.videoFilename = wrk_path + "\\video_data\\" + filename + ".avi"
             self.SCREEN_SIZE = 1920, 1080 
-            self.fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
-            # self.out = cv2.VideoWriter(r"output.avi",self.fourcc, 30.0, (self.SCREEN_SIZE))
-            # scale_percent = 60 # percent of original size
-            # width = int(self.SCREEN_SIZE[0] * scale_percent / 100)
-            # height = int(self.SCREEN_SIZE[1] * scale_percent / 100)
-            # self.scaledScreenSize = width, height
-            self.out = cv2.VideoWriter(self.videoFilename,self.fourcc, 30.0, (self.SCREEN_SIZE))
-            # self.out = cv2.VideoWriter(self.videoFilename,self.fourcc, 30.0, (self.scaledScreenSize))
+            # self.fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
+            self.fourcc = cv2.VideoWriter_fourcc(*"mp4v") # occupies less space
+            self.rescale_flag = True
+            self.scale_percent = 60 # percent of original size
+
+            if self.rescale_flag:
+                width = int(self.SCREEN_SIZE[0] * self.scale_percent / 100)
+                height = int(self.SCREEN_SIZE[1] * self.scale_percent / 100)
+                self.scaledScreenSize = width, height
+                self.out = cv2.VideoWriter(self.videoFilename,self.fourcc, 30.0, (self.scaledScreenSize))
+            else:
+                self.out = cv2.VideoWriter(self.videoFilename,self.fourcc, 30.0, (self.SCREEN_SIZE))
+            
             self.open = True
+
             
         # Video starts being recorded
         def record(self):
@@ -177,18 +229,20 @@ class VideoRecorder():
                     start_time = time.perf_counter()
                     for frame, screenshot in enumerate(ScreenCapture((0, 0, 1920, 1080)), start=1):
                         print(f"\rFPS: {frame / (time.perf_counter() - start_time):3.0f}", end='')
+                        real_fps.append(frame / (time.perf_counter() - start_time))
                         # the dimensions are right, since width goes second in an np.array
                         # resize image
-                        # scale_percent = 60 # percent of original size
-                        # width = int(screenshot.shape[1] * scale_percent / 100)
-                        # height = int(screenshot.shape[0] * scale_percent / 100)
-                        # dim = (width, height)
 
-                        # resize image
-                        # resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
-                        # resized = cv2.resize(screenshot, dim, interpolation = cv2.INTER_LINEAR_EXACT)
-                        # self.out.write(cv2.cvtColor(resized, cv2.COLOR_BGR2RGB))
-                        self.out.write(cv2.cvtColor(screenshot, cv2.COLOR_BGR2RGB))
+                        if self.rescale_flag:
+                            width = int(screenshot.shape[1] * self.scale_percent / 100)
+                            height = int(screenshot.shape[0] * self.scale_percent / 100)
+                            dim = (width, height)
+
+                            # resize image
+                            resized = cv2.resize(screenshot, dim, interpolation = cv2.INTER_LINEAR_EXACT)
+                            self.out.write(cv2.cvtColor(resized, cv2.COLOR_BGR2RGB))
+                        else:
+                            self.out.write(cv2.cvtColor(screenshot, cv2.COLOR_BGR2RGB))
 
         # Finishes the video recording therefore the thread too
         def stop(self):
@@ -271,8 +325,6 @@ class AudioRecorder():
 
 
 
-
-
 def start_AVrecording(filename):
 
         global video_thread
@@ -308,18 +360,96 @@ def stop_AVrecording(filename):
         # Merging audio and video signal
         print("Before ABS")
         print("Normal recording\nMuxing")
+
+
+        # mean fps
+        if len(real_fps) != 0:
+            mean_real_fps = math.ceil(statistics.mean(real_fps))
+            print("Real fps*: ", mean_real_fps)
         
-        cmd = ffmpeg_path + " -ac 1 -channel_layout mono -i " + audio_thread.audio_filename + " -i " +  video_thread.videoFilename +  " -pix_fmt yuv420p " + merged_filename + ".avi" 
-        subprocess.call(cmd, shell=True)
+        print("Participant: ", merged_filename)
+
+        # cmd = ffmpeg_path + " -ac 1 -channel_layout mono -i " + audio_thread.audio_filename + " -i " +  video_thread.videoFilename +  " -pix_fmt yuv420p " + merged_filename + ".avi" 
+        # cmd1 = ffmpeg_path + " -y -i " + video_thread.videoFilename + " -c copy -f h264 " + video_thread.videoFilename + "_output_raw_bitstream.h264"
+        # cmd2 = ffmpeg_path + " -y -r " + str(mean_real_fps) + " -i " + video_thread.videoFilename + "_output_raw_bitstream.h264" + " -c copy " + video_thread.videoFilename + "_reframed.avi"
+        # cmd3 = ffmpeg_path + " -ac 1 -channel_layout mono -i " + audio_thread.audio_filename + " -i " +  video_thread.videoFilename + "_reframed.avi" " -c:v copy -c:a copy " + merged_filename
+        # subprocess.call(cmd, shell=True)
+
+        cmd1_args = " -y -i " + video_thread.videoFilename + " -c copy -f h264 " + video_thread.videoFilename + "_output_raw_bitstream.h264"
+        cmd2_args = " -y -r " + str(mean_real_fps) + " -i " + video_thread.videoFilename + "_output_raw_bitstream.h264" + " -c copy " + video_thread.videoFilename + "_reframed.avi"
+        cmd3_args = " -ac 1 -channel_layout mono -i " + audio_thread.audio_filename + " -i " +  video_thread.videoFilename + "_reframed.avi" " -c:v copy -c:a copy " + merged_filename
+        
+
+        call_and_log_subprocess(ffmpeg_path, cmd1_args)
+        call_and_log_subprocess(ffmpeg_path, cmd2_args)
+        call_and_log_subprocess(ffmpeg_path, cmd3_args)
+
+        # process = Popen(executable=ffmpeg_path, args=cmd1_args, stdout=PIPE, stderr=STDOUT)
+        # with process.stdout:
+        #     log_subprocess_output(process.stdout)
+        # exitcode = process.wait() # 0 means success
+        # print("Exit code from cmd1: ", exitcode)
+
+        # subprocess.call(cmd1, shell=True)
+        # print("\n\ncmd1 is finished\n\n")
+        # subprocess.call(cmd2, shell=True)
+        # print("\n\ncmd2 is finished\n\n")
+        # subprocess.call(cmd3, shell=True)
+        # print("\n\ncmd3 is finished\n\n")
         print("..")
 
 
+# DONE: log subprocess
+def log_subprocess_output(pipe):
+    for line in iter(pipe.readline, b''): # b'\n'-separated lines
+        logging.info('got line from subprocess: %r', line)
 
+def call_and_log_subprocess(ffmpeg_path, cmd_args):
+    process = Popen(executable=ffmpeg_path, args=cmd_args, stdout=PIPE, stderr=STDOUT)
+    with process.stdout:
+        log_subprocess_output(process.stdout)
+    exitcode = process.wait() # 0 means success
+    print("CMD: ", ffmpeg_path + cmd_args)
+    print("EXIT CODE: ", exitcode)
+
+
+# DONE: ensure systemExit is performed only after stop_recording is finished
+def on_exit(signal_type):
+    print('caught signal:', str(signal_type))
+    try:
+        stop_AVrecording(filename)
+    except BaseException:
+        print(traceback.format_exc())
+
+win32api.SetConsoleCtrlHandler(on_exit, True)
+
+# TODO: fix color issues
 
 if __name__== "__main__":
+
+    try:
         ts = int(round(time.time() * 1000))
         filename = str(ts) + "_Default_user"
-        start_AVrecording(filename)     
-        time.sleep(15)
-        stop_AVrecording(filename)
-        print("Done")
+        start_AVrecording(filename) 
+        time.sleep(3600*3)
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt") 
+    except SystemExit:
+        print("SystemExit") 
+    except BaseException:
+        print(traceback.format_exc())
+    finally: # dirty fix
+        try:
+            stop_AVrecording(filename)
+        except BaseException:
+            print(traceback.format_exc())
+        
+    # DONE: run it anyway
+    # # important to catch stop_recording issues
+    # try:
+    #     stop_AVrecording(filename)
+    # except BaseException:
+    #     print(traceback.format_exc())
+    # finally:
+
+  

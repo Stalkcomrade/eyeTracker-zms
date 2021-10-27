@@ -4,6 +4,8 @@
 *.csv
 *.html
 *.css
+*.log
+*.h264
 __pycache__
 build
 dist
